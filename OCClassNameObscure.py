@@ -5,14 +5,38 @@ import random
 import chardet
 import hashlib
 import sys
+from datetime import datetime
 
-system_class_list = []
+temp_list = sys.argv
 
-(filepath, temp_filename) = os.path.split(sys.argv[0])
-dir_path = filepath
+print("参数列表:")
+print(temp_list)
+
+run_output_path = ''
+run_input_path = ''
+if len(temp_list) == 3:
+    run_input_path = temp_list[1]
+    run_output_path = temp_list[2]
+
+start_time = datetime.now()
+
+if not run_output_path:
+    temp_list_output = sys.argv[0].split('/')
+    user_name = ''
+    for i in range(0, len(temp_list_output)):
+        value = temp_list_output[i]
+        if value == 'Users':
+            user_name = temp_list_output[i + 1]
+            run_output_path = '/Users/%s/Desktop/ObscureOutput' % user_name
+
+if not os.path.exists(run_output_path):
+    os.mkdir(run_output_path)
+
+obscure_class_dic_path = os.path.join(run_output_path, 'OCClassObscure.txt')
+dir_path = sys.path[0]
 class_path = os.path.join(dir_path, "file/OC_Class.txt")
 file_category_names = []
-obscure_class_dic_path = "dir_path/OCClassObscure.txt"
+system_class_list = []
 with open(class_path, encoding="utf-8", mode="r", errors="ignore") as file_object:
     system_class_list = file_object.readlines()
 temp_special_import_list = []
@@ -22,10 +46,31 @@ top_dir = ''
 '''忽略文件，例如.a的头文件'''
 ignore_file_path_list = []
 '''不忽略的特殊文件'''
-no_ignore_files = ['Assets/config.xml']
+no_ignore_files = ['GCTCordovaConfig/Assets/config.xml']
 '''需要忽略的类名
+LKSDK引用：GCDAsyncSocket、MSWeakTimer、YTKRequest、YTKNetworkAgent、YTKRequest、MJRefreshNormalHeader、SDWebImageManager、JSONKeyMapper、
+MJRefreshBackNormalFooter、MQQNetworkInfo
+MQQNetworkInfo被引用:（GCTAccount、GCTVODPlayer+GCTStatistics、GCTAVPlayer+Statistic、GCTConnectionViewModel）
+例：LKSDK是原生开发的，但是引入项目中已经是.framework形式，framework在查询类名和替换类名时都会被过滤掉，其中引用的类在外部被搜索到并替换，
+就会导致LKSDK内部引用此类时找不到，所以这种结构本身就不大合理，.framework内部应该是一个完整的封闭系统
+
+编码解码的类不能混淆，为了兼容已经保存到本地的数据，有这些：'AFHTTPSessionManager', 'AFURLSessionManager', 'AFSecurityPolicy',
+                          'AFURLRequestSerialization', 'AFURLResponseSerialization', 'RACArraySequence',
+                          'RACEmptySequence', 'RACSequence', 'RACTuple', 'RACUnarySequence', 'MPEngineInfo',
+                          'GCTShuziAccountModel', 'GCTTravelPermissionModel', 'GCTVideoFoodDisplayCountModel',
+                          'GCTVideoFoodPlayTimeModel'
+
 '''
-ignore_class_name_list = ['AppDelegate', 'AFHTTPBodyPart']
+ignore_class_name_list = ['AppDelegate', 'AFHTTPBodyPart', 'MQQHotspotWiFi', 'MQQWiFi', 'GCTEvent', 'Private',
+                          'JSONModel', 'TarsObject', 'GCTLoginEvent', 'GCTLogoutEvent', 'GCDAsyncSocket', 'MSWeakTimer',
+                          'YTKRequest', 'YTKNetworkAgent', 'YTKRequest', 'MJRefreshNormalHeader', 'SDWebImageManager',
+                          'JSONKeyMapper', 'MJRefreshBackNormalFooter', 'Reachability', 'MQQNetworkInfo',
+                          'LBSAddressInfo', 'LBSLocationManager', 'SDWebImageDownloader', 'MBProgressHUD',
+                          'AFHTTPSessionManager', 'AFURLSessionManager', 'AFSecurityPolicy',
+                          'AFURLRequestSerialization', 'AFURLResponseSerialization', 'RACArraySequence',
+                          'RACEmptySequence', 'RACSequence', 'RACTuple', 'RACUnarySequence', 'MPEngineInfo',
+                          'GCTShuziAccountModel', 'GCTTravelPermissionModel', 'GCTVideoFoodDisplayCountModel',
+                          'GCTVideoFoodPlayTimeModel']
 
 '''需要忽略的文件名'''
 ignore_file_list = ['RUIKit', 'R']
@@ -33,7 +78,27 @@ ignore_file_list = ['RUIKit', 'R']
 ignore_class_pre_list = ['GCTTheme']
 '''去除\n'''
 # ignore_dir_list = ['Pods']
-ignore_dir_list = ['.framework', 'Protobuf', 'AFNetworking', 'FMDB']
+'''
+CNCore的类在其他类的Framework中大量饮用
+ChasingGameSDK.framework引用了大量的第三方库，因ChasingGameSDK已经是编译完的状态，导致其他源码引入的第三方库都不能做混淆
+'''
+ignore_dir_list = ['.framework', '/Protobuf', '/AFNetworking', '/FMDB', '/Nimbus', '/CNCore', '/mopub-ios-sdk',
+                   '/GCTTinyApp', '/ZFPlayer', '/KTVHTTPCache', '/MBProgressHUD', '/Headers/Private',
+                   '/Headers/Public', '/React-Core', '/React']
+
+'''
+    需要混淆的Pods库
+'''
+pod_need_list = ['GCTAccount', 'GCTAdvert', 'GCTAPM', 'GCTAudio', 'GCTCinema', 'GCTCitiesAndStations', 'GCTConfig',
+                 'GCTCordovaConfig', 'GCTCordovaPlugins', 'GCTCoupon', 'GCTDataPersisten', 'GCTEventBus', 'GCTEvents',
+                 'GCTFaceCheck', 'GCTFeed', 'GCTHome', 'GCTHTTPServer', 'GCTIDAuth', 'GCTIOSUtils', 'GCTLocation',
+                 'GCTLogger', 'GCTLottie', 'GCTMapKitV2', 'GCTMediaPlayer', 'GCTMine', 'GCTNotificationCenter', 'GCTPay'
+                 'GCTPromotionCenter', 'GCTPushKit', 'GCTQQ', 'GCTQRCode', 'GCTQuickLogin', 'GCTReact', 'GCTReservation',
+                 'GCTResourceKit', 'GCTRiskDetective', 'GCTRouter', 'GCTSharedTravel', 'GCTShareKit', 'GCTShuziAccount',
+                 'GCTShuziProxy', 'GCTStatistic', 'GCTTheme', 'GCTTinyApp', 'GCTToday', 'GCTTravel', 'GCTUIKit',
+                 'GCTUser', 'GCTVideo', 'GCTWebView', 'GCTWiFiConnect', 'GCTWiFiSDK', 'GCTYouZanDebugKit',
+                 'GCTYouZanKit', 'GCTZipArchive', 'GDTMobSDK', 'GKPageScrollView', 'NextGCT', 'react_module_bridge']
+
 for value in system_class_list:
     index = system_class_list.index(value)
     if value.endswith('\n'):
@@ -48,7 +113,19 @@ oc_class_name_dic = {}
 prefix_list = ["A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L", "M", "N",
                "O", "P", "Q", "R", "S", "T", "U", "V", "W", "X", "Y", "Z"]
 oc_file_type = [".h", ".m", ".mm"]
-oc_obscure_file_type = [".pch", ".h", ".m", ".hpp", ".cpp", ".mm", ".cc", ".c", ".inl", ".frag", ".vert"]
+oc_obscure_file_type = [".pch", ".h", ".m", ".hpp", ".cpp", ".mm", ".cc", ".c", ".inl", ".frag", ".vert", '.storyboard']
+
+
+def is_ignore_pod(file_path):
+    pod_dir = '/Pods/'
+    if pod_dir in file_path:
+        for v in pod_need_list:
+            c_pod_dir = pod_dir + v
+            if c_pod_dir in file_path:
+                return False
+        return True
+    else:
+        return False
 
 
 def get_random_number_5_10():
@@ -68,12 +145,9 @@ def get_class_name_with_match_string(local_match_string):
     global modification_list
     match_string = local_match_string.strip()
     match_list = []
-    if '@interface' in match_string:
-        match_string = match_string.split(":")[-1]
-    if ":" in match_string:
-        match_list = match_string.split(":")
-        match_string = match_list[0]
-        match_string = match_string.strip()
+    match_list = match_string.split(":")
+    match_string = match_list[0]
+    match_string = match_string.strip()
     match_list = match_string.split(" ")
     match_string = match_list[-1]
     match_string = match_string.replace(";", "")
@@ -104,7 +178,7 @@ def is_ignore_class_name_pre(name):
 
 
 def is_ignore_file(s_file):
-    for value in ignore_class_name_list:
+    for value in ignore_file_path_list:
         if value in s_file:
             return True
     return False
@@ -144,7 +218,11 @@ def obfuscated_code():
     global obscure_class_dic_path
     global ignore_file_path_list
     global top_dir
-    top_dir = input("输入项目路径或直接拖入文件夹（例:E:\svn_reposition\ZheJiang）：\n")
+    top_dir = ''
+    if run_input_path:
+        top_dir = run_input_path
+    else:
+        top_dir = input("输入项目路径或直接拖入文件夹（例:E:\svn_reposition\ZheJiang）：\n")
     if top_dir == '':
         print("未输入,程序结束")
         return
@@ -162,14 +240,10 @@ def obfuscated_code():
     print("正在生成替换列表......")
     ''' 匹配声明类名 '''
     class_pattern = re.compile(
-        r'(.)*@interface+[\s]*[_a-zA-Z]+([\s]+|;|<|:)')
-    ''' 匹配类别类名 '''
-    class_pattern_2 = re.compile(r'@interface.*\([\s]*[_a-zA-Z]+\)')
-    ''' 匹配需要过滤特殊导入 例：#import<AA.h>'''
-    class_pattern_3 = re.compile(r'#import[\s]+<((?!/).)*>')
+        r'(.)*@interface[\s]+[_a-zA-Z]+[\s]*[:][\s]*[_a-zA-Z]+[\s]*')
     for dir_path, sub_paths, files in os.walk(top_dir, False):
         if is_in_ignore_dir_list(dir_path):
-            print("过滤特殊文件夹，例如Pods、framework")
+            # print("过滤特殊文件夹，例如Pods、framework")
             continue
         for s_file in files:
             file_name, file_type = os.path.splitext(s_file)
@@ -184,22 +258,27 @@ def obfuscated_code():
     temp = []
     for dir_path, sub_paths, files in os.walk(top_dir, False):
         if is_in_ignore_dir_list(dir_path):
-            print("过滤特殊文件夹，例如Pods、framework")
+            # print("过滤特殊文件夹，例如Pods、framework")
+            continue
+        '''
+            只混淆指定的库
+        '''
+        if is_ignore_pod(dir_path):
             continue
         for s_file in files:
             file_name, file_type = os.path.splitext(s_file)
             file_path = os.path.join(dir_path, s_file)
-            print("正在扫描文件:" + file_path)
             if file_type not in oc_file_type:
                 continue
             if file_name in ignore_file_list:
                 continue
             if is_ignore_path(file_path):
-                print("遍历类名：跳过静态库对应的头文件")
+                # print("遍历类名：跳过静态库对应的头文件")
                 continue
             if is_ignore_file(s_file):
-                print("跳过忽略文件：" + file_path)
+                # print("跳过忽略文件：" + file_path)
                 continue
+            print("正在扫描文件:" + file_path)
             # if is_category_file(file_name):
             #     print("跳过类别："+file_name)
             #     continue
@@ -207,45 +286,17 @@ def obfuscated_code():
             data = f.read()
             encode_type = chardet.detect(data)["encoding"]
             f.close()
+            if s_file == 'AppDelegate+WiFi.m':
+                encode_type = 'utf-8'
             # 获取结构体、类名列表
             with open(file_path, mode='r', encoding=encode_type, errors='ignore') as file_object:
                 file_content = file_object.readlines()
                 for line_val in file_content:
-                    m3 = class_pattern_3.match(line_val)
-                    if m3:
-                        g_list3 = m3.group()
-                        if isinstance(g_list3, str):
-                            match_string3 = str(g_list3)
-                            match_string3 = match_string3.split('<')[-1]
-                            match_string3 = match_string3.split('>')[0]
-                            match_string3 = match_string3.strip()
-                            match_string3 = match_string3.split('.')[0]
-                            if match_string3 not in temp_special_import_list:
-                                temp_special_import_list.append(match_string3)
                     if '@interface' not in line_val:
                         ''' 此行没有@interface直接跳过 '''
                         continue
                     line_val = line_val.replace('\n', '')
                     m = class_pattern.match(line_val)
-                    m2 = class_pattern_2.match(line_val)
-                    if m2:
-                        ''' 匹配类别类名 '''
-                        g_list2 = m2.group()
-                        if isinstance(g_list2, str):
-                            match_string2 = str(g_list2)
-                            match_string2 = match_string2.split('(')[-1]
-                            match_string2 = match_string2.split(')')[0]
-                            if match_string2 in oc_class_name_list:
-                                continue
-                            if match_string2 in system_class_list:
-                                continue
-                            # 加入类名列表
-                            if (match_string2 not in ignore_class_name_list) and (len(match_string2) >= min_length):
-                                print("Object-C类名%d\n：" % len(oc_class_name_list))
-                                temp.append(match_string2)
-                            '''匹配到就不再匹配不是类别的类名'''
-                            continue
-
                     if m:
                         g_list = m.group()
                         if isinstance(g_list, str):
@@ -257,12 +308,11 @@ def obfuscated_code():
                                 continue
                             # 加入类名列表
                             if (match_string not in ignore_class_name_list) and (len(match_string) >= min_length):
-                                print("Object-C类名%d\n：" % len(oc_class_name_list))
+                                print("扫描到Object-C类名：%d\n：" % len(oc_class_name_list))
                                 if not is_ignore_class_name_pre(match_string):
                                     oc_class_name_list.append(match_string)
 
-
-    print("==========替换列表生成完成==========")
+    print("===========替换列表生成完成===========")
     ''' 过滤#import<AA.h>这种的类名AA '''
     for i in range(len(oc_class_name_list) - 1, -1, -1):
         special_value = oc_class_name_list[i]
@@ -274,18 +324,29 @@ def obfuscated_code():
         test_index = test_index + 1
         random_string = "CCT" + get_random_string(get_random_number_5_10()) + get_random_string(get_random_number_5_10())
         oc_class_name_dic[class_value] = random_string
-    temp_w_list = []
+    temp_w_list = ['{\n']
     for key1, value1 in oc_class_name_dic.items():
-        string1 = key1+'    ->     '+value1+'\n'
+        string1 = " \"%s\":\"%s\",\n" % (key1, value1)
         temp_w_list.append(string1)
+    del_temp = temp_w_list[-1]
+    del_temp = del_temp.replace(',', '')
+    temp_w_list[-1] = del_temp
+    temp_w_list.append('}')
     with open(obscure_class_dic_path, encoding="utf-8", mode="w+", errors="ignore") as file_object:
         file_object.write(''.join(temp_w_list))
-    print('遍历：' + top_dir)
+    # print('遍历：' + top_dir)
     for dir_path, sub_paths, files in os.walk(top_dir, False):
-        if is_in_ignore_dir_list(dir_path):
-            print("过滤特殊文件夹，例如Pods、framework")
-            continue
+        # 查找时过滤，替换时不过滤
+        # if is_in_ignore_dir_list(dir_path):
+        #     print("过滤特殊文件夹，例如Pods、framework")
+        #     continue
+        # if '/Pods' in dir_path:
+        #     continue
+        # if is_ignore_pod(dir_path):
+        #     continue
         for s_file in files:
+            if s_file == 'GCTUIKit.h':
+                print('1')
             file_path = os.path.join(dir_path, s_file)
             is_ignore = is_ignore_path(file_path)
             if is_ignore:
@@ -295,62 +356,110 @@ def obfuscated_code():
                 print('路径有.framework'+file_path)
                 continue
             file_name, file_type = os.path.splitext(s_file)
+
             if file_name in ignore_file_list:
                 print('文件名在忽略列表'+file_name)
                 continue
             if file_type not in oc_obscure_file_type:
                 if not is_no_ignore_file(file_path):
-                    print('不是混淆文件类型' + s_file)
+                    # print('不是混淆文件类型' + s_file)
                     continue
 
-            print("正在替换类名...:" + file_path)
+            print("正在处理...:" + file_path)
             f = open(file_path, 'rb')
             data = f.read()
             encode_type = chardet.detect(data)["encoding"]
             f.close()
+            if s_file == 'AppDelegate+WiFi.m':
+                encode_type = 'utf-8'
             obscure_oc_class_name(file_path, encode_type)
+    for dir_path, sub_paths, files in os.walk(top_dir, False):
+        # if '/Pods' in dir_path:
+        #     continue
+        for s_file in files:
+            file_path = os.path.join(dir_path, s_file)
+            file_name, file_type = os.path.splitext(s_file)
+            if file_name in oc_class_name_list:
+                obscure_file_name = oc_class_name_dic[file_name]
+                new_path = os.path.join(dir_path, obscure_file_name + file_type)
+                # os.rename(file_path, new_path)
+    # pbxproj_path = ''
+    # for dir_path, sub_paths, files in os.walk(top_dir, False):
+    #     if '/Pods' in dir_path:
+    #         continue
+    #     stop = False
+    #     for s_file in files:
+    #         if s_file == 'project.pbxproj':
+    #             stop = True
+    #             pbxproj_path = os.path.join(dir_path, s_file)
+    #             break
+    #     if stop:
+    #         break
+    # pbxproj_content = ''
+    # f = open(file_path, 'rb')
+    # data = f.read()
+    # encode_type = chardet.detect(data)["encoding"]
+    # f.close()
+    # with open(pbxproj_path, mode='r', encoding=encode_type) as file_object:
+    #     pbxproj_content = file_object.read()
+    # for key1, value1 in oc_class_name_dic.items():
+    #     pbxproj_content = pbxproj_content.replace(' %s.' % key1, ' %s.' % value1)
+    # with open(pbxproj_path, mode='w', encoding=encode_type) as file_object:
+    #     file_object.write(pbxproj_content)
 
 
 def obscure_oc_class_name(file_path, encode_type):
     global oc_class_name_dic
     global oc_class_name_list
-    print(file_path)
+    # print(file_path)
     w_file_content = ''
     with open(file_path, mode='r', encoding=encode_type, errors='ignore') as file_object:
         w_file_content = file_object.read()
     start_md5 = get_string_md5(w_file_content)
     file_name, file_type = os.path.splitext(file_path)
+    random_class_string = ''
+    old_v = ''
+
+    def change(match_value):
+        # global old_v
+        # global random_class_string
+        # global w_file_content
+        # print('change: %s %s' % (old_v, random_class_string))
+        line = str(match_value.group())
+        tuple_temp = match_value.span()
+        j = 1
+        char_pre = w_file_content[tuple_temp[0] - j]
+        char_suf = w_file_content[tuple_temp[1]]
+        char_list = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789+/'
+        if char_pre in char_list or char_suf in char_list:
+            return line
+        temp_c_line = []
+        while char_pre != '\n':
+            char_pre = w_file_content[tuple_temp[0] - j]
+            temp_c_line.insert(0, char_pre)
+            j = j + 1
+            if tuple_temp[0] - j < 0:
+                char_pre = '\n'
+        temp_str = ''.join(temp_c_line)
+        if "#import" in temp_str or "#include" in temp_str or "URLForResource" in temp_str:
+            return line
+        return line.replace(old_v, random_class_string)
 
     for i, val in enumerate(oc_class_name_list):
         if val in w_file_content:
             random_class_string = oc_class_name_dic[val]
-            left_list = [" ", ")", "(", "~", "<", "\n", ":", ",", ">", "\t", "\r", "*", "&", "!", "[", "=",
-                         "{", "^", "return +", "return -"]
-            right_list = [" ", ")", ":", ";", "\r", "\n", "*", "&", "(", ">", ",", "{", "\t", "<",
-                          "]", ".", ' *)']
-            for left_value in left_list:
-                for right_value in right_list:
-                    object_string = "%s%s%s" % (left_value, val, right_value)
-                    change_string = "%s%s%s" % (left_value, random_class_string, right_value)
-                    w_file_content = w_file_content.replace(object_string, change_string)
-            left_list2 = ['initWithModuleClass:@\"', 'NSClassFromString(@\"', 'cacheName : @\"', ': @\"', '): @\"', '\n@\"', '\":@\"', '\": @\"', '- (', '[[']
-            right_list2 = ['\" title', '\")', '\"];', '\"};' '\"\n};', '\":@{', '\",', '\"\n', ' *)', ' service]']
-            for left_value2 in left_list2:
-                for right_value2 in right_list2:
-                    object_string = "%s%s%s" % (left_value2, val, right_value2)
-                    change_string = "%s%s%s" % (left_value2, random_class_string, right_value2)
-                    w_file_content = w_file_content.replace(object_string, change_string)
-            w_file_content = replace(': @\"', '\"};', w_file_content, val, random_class_string)
-            w_file_content = replace('itemClassName:@\"', '\"', w_file_content, val, random_class_string)
-            if str(file_type) == '.xml':
-                w_file_content = replace('name=\"', '\"', w_file_content, val, random_class_string)
-                w_file_content = replace('value=\"', '\"', w_file_content, val, random_class_string)
+            old_v = val
+            # count_s = 7
+            # com_string = r"(.|\s){%d}%s(.|\s){%d}" % (count_s, val, count_s)
+            com_string = r"%s" % old_v
+            t_list = re.sub(com_string, change, w_file_content)
+            w_file_content = ''.join(t_list)
 
     end_md5 = get_string_md5(w_file_content)
     if not start_md5 == end_md5:
         with open(file_path, mode='w', encoding=encode_type, errors='ignore') as file_object:
             file_object.write(w_file_content)
-    print("处理完成: " + file_path)
+    # print("处理完成: " + file_path)
 
 
 def replace(left, right, string, val, random_class_string):
@@ -362,3 +471,5 @@ def replace(left, right, string, val, random_class_string):
 
 obfuscated_code()
 print("混淆Object-C类名完成")
+end_time1 = datetime.now()
+print("脚本oc_class_path运行时间：%s" % str((end_time1 - start_time).seconds))

@@ -1,4 +1,13 @@
 
+name
+NSObject
+MyClass
+CLKTextProvider
+__UIDiffableDataSource
+__UIDiffableDataSourceSnapshot
+NFCTagReaderSession
+NSIndexSet
+NSData
 MXMetaData
 MXAppResponsivenessMetric
 MXUnitSignalBars
@@ -915,7 +924,6 @@ UIDocumentPickerViewController
 UICubicTimingParameters
 UISpringTimingParameters
 UIContextMenuConfiguration
-NSObject
 UIScreenEdgePanGestureRecognizer
 UICollectionViewFocusUpdateContext
 UICollectionView
@@ -954,6 +962,7 @@ UIPreviewInteraction
 UIBezierPath
 UITitlebar
 NSToolbarItem
+NSMenuToolbarItem
 NSSharingServicePickerToolbarItem
 UITabBarItemStateAppearance
 UITabBarItemAppearance
@@ -1021,7 +1030,6 @@ NFCVASReaderSession
 NFCNDEFPayload
 NFCNDEFMessage
 NFCTagCommandConfiguration
-NFCTagReaderSession
 HMEvent
 HMCameraStream
 HMLocationEvent
@@ -2083,7 +2091,6 @@ NSURLQueryItem
 NSURLComponents
 NSCharacterSet
 NSFileSecurity
-NSData
 NSMutableData
 NSPurgeableData
 NSDecimalNumber
@@ -2183,7 +2190,6 @@ NSMeasurementFormatter
 NSPersonNameComponentsFormatter
 NSBundle
 NSBundleResourceRequest
-NSIndexSet
 NSMutableIndexSet
 NSUUID
 NSUbiquitousKeyValueStore
@@ -2597,7 +2603,6 @@ PHAssetCollectionChangeRequest
 JSVirtualMachine
 JSContext
 JSValue
-MyClass
 JSManagedValue
 GKRandomDistribution
 GKGaussianDistribution
